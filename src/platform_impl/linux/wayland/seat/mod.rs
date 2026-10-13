@@ -158,9 +158,8 @@ impl SeatHandler for WinitState {
             },
         };
 
-        if let Some(text_input) = seat_state.text_input.take() {
-            text_input.destroy();
-        }
+        // NOTE: the text input has no direct connection to seat capability, but only to the
+        // seat, so it is destroyed in `remove_seat` instead.
 
         match capability {
             SeatCapability::Touch => {
@@ -214,7 +213,11 @@ impl SeatHandler for WinitState {
         _queue_handle: &QueueHandle<Self>,
         seat: WlSeat,
     ) {
-        let _ = self.seats.remove(&seat.id());
+        if let Some(mut seat_state) = self.seats.remove(&seat.id()) {
+            if let Some(text_input) = seat_state.text_input.take() {
+                text_input.destroy();
+            }
+        }
         self.on_keyboard_destroy(&seat.id());
     }
 }
